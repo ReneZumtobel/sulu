@@ -35922,7 +35922,7 @@ define('__component__$matrix@husky',[],function() {
                 this.toggleIcon.bind(this),
                 'tbody > tr > td.value > span[class^="fa-"]'
             );
-            this.sandbox.dom.on(this.$element, 'click', this.toggleRow.bind(this), 'tbody > tr > td:last-child');
+            this.sandbox.dom.on(this.$element, 'click', this.toggleRow.bind(this), 'tbody > tr > td > div');
         },
 
         bindCustomEvents: function() {
@@ -35932,15 +35932,16 @@ define('__component__$matrix@husky',[],function() {
 
         toggleIcon: function(event) {
             var $target = event.currentTarget,
-                $tr = this.sandbox.dom.parent($target),
-                $allTargets = this.sandbox.dom.find('span[class^="fa-"]', $tr),
+                $td = this.sandbox.dom.parent($target),
+                $tr = this.sandbox.dom.parent($td),
+                $allTargets = this.sandbox.dom.find('span[class^="fa-"]', $td),
                 $activeTargets,
-                $link = this.sandbox.dom.find('td:last-child span', $tr);
+                $link = this.sandbox.dom.find('td:last-child > div > span', $tr);
 
             this.sandbox.dom.toggleClass($target, activeClass);
 
-            $activeTargets = this.sandbox.dom.find('span[class^="fa-"].' + activeClass, $tr);
-            if ($activeTargets.length < $allTargets.length) {
+            $activeTargets = this.sandbox.dom.find('span[class^="fa-"].' + activeClass, $td);
+            if ($activeTargets.length == 0) {
                 this.sandbox.dom.html($link, this.options.captions.all);
             } else {
                 this.sandbox.dom.html($link, this.options.captions.none);
@@ -35955,12 +35956,12 @@ define('__component__$matrix@husky',[],function() {
         },
 
         toggleRow: function(event) {
-            var $tr = this.sandbox.dom.parent(event.currentTarget),
+            var $tr = this.sandbox.dom.parent(this.sandbox.dom.parent(event.currentTarget)),
                 $targets = this.sandbox.dom.find('span[class^="fa-"]', $tr),
                 $activeTargets = this.sandbox.dom.find('span[class^="fa-"].' + activeClass, $tr),
-                $link = this.sandbox.dom.find('td:last-child span', $tr), activated;
+                $link = this.sandbox.dom.find('td:last-child > div > span', $tr), activated;
 
-            if ($activeTargets.length < $targets.length) {
+            if ($activeTargets.length == 0) {
                 this.sandbox.dom.addClass($targets, activeClass);
                 this.sandbox.dom.html($link, this.options.captions.none);
                 activated = true;
@@ -35985,6 +35986,8 @@ define('__component__$matrix@husky',[],function() {
 
             // emit events for communication with the outside
             this.sandbox.dom.each($trs, function(key, tr) {
+                var $link = this.sandbox.dom.find('td:last-child > div > span', tr);
+                this.sandbox.dom.html($link, this.options.captions.none);
                 this.sandbox.emit('husky.matrix.changed', {
                     section: this.sandbox.dom.data(this.sandbox.dom.find('td.section', tr), 'section'),
                     value: this.options.values.horizontal[$(tr).data('row-count')],
@@ -36000,6 +36003,8 @@ define('__component__$matrix@husky',[],function() {
 
             // emit events for communication with the outsite
             this.sandbox.dom.each($trs, function(key, tr) {
+                var $link = this.sandbox.dom.find('td:last-child > div > span', tr);
+                this.sandbox.dom.html($link, this.options.captions.all);
                 this.sandbox.emit('husky.matrix.changed', {
                     section: this.sandbox.dom.data(this.sandbox.dom.find('td.section', tr), 'section'),
                     value: this.options.values.horizontal[$(tr).data('row-count')],
@@ -36055,9 +36060,6 @@ define('__component__$matrix@husky',[],function() {
                 }.bind(this));
             }
 
-            // add empty th for all link
-            this.sandbox.dom.append($tr, this.sandbox.dom.createElement('<th/>'));
-
             this.sandbox.dom.append($thead, $tr);
 
             return $thead;
@@ -36077,9 +36079,9 @@ define('__component__$matrix@husky',[],function() {
         prepareTableRow: function($tbody, rowCount) {
             var $tr = this.sandbox.dom.createElement('<tr/>'),
                 $tdHead = this.sandbox.dom.createElement('<td class="section"/>'),
-                $tdValue = this.sandbox.dom.createElement('<td class="value"/>'),
-                $tdAll = this.sandbox.dom.createElement('<td class="all"/>'),
-                allActive;
+                $tdValue = this.sandbox.dom.createElement('<td class="value"></td>'),
+                $tdAll = $tdValue,
+                allInActive;
 
             $tr.data('row-count', rowCount);
 
@@ -36095,7 +36097,7 @@ define('__component__$matrix@husky',[],function() {
 
             // flag for checking if every flag is true
             // insert values of matrix
-            allActive = this.prepareTableColumn(
+            allInActive = this.prepareTableColumn(
                 $tdValue,
                 this.options.values.horizontal[rowCount],
                 this.options.values.vertical[rowCount],
@@ -36105,21 +36107,20 @@ define('__component__$matrix@husky',[],function() {
             this.sandbox.dom.append($tr, $tdValue);
 
             //add all link
-            this.sandbox.dom.html(
-                $tdAll,
-                [
+                $tdAll.append(
+                [   '<div class="all">',
                     '<span class="pointer">',
-                    (!!allActive) ? this.options.captions.none : this.options.captions.all,
-                    '</span>'
-                ].join('')
-            );
+                    (!allInActive) ? this.options.captions.none : this.options.captions.all,
+                    '</span>',
+                    '</div>'
+                ].join(''));
             this.sandbox.dom.append($tr, $tdAll);
 
             this.sandbox.dom.append($tbody, $tr);
         },
 
         prepareTableColumn: function($tdValue, columnData, section, value) {
-            var allActive = true,
+            var allInActive = true,
                 title,
                 $span,
                 i;
@@ -36140,15 +36141,13 @@ define('__component__$matrix@husky',[],function() {
                 // set activated if set in delivered data
                 if (!!value && !!value[i]) {
                     this.sandbox.dom.addClass($span, activeClass);
-                } else {
-                    // set the flag to false if there is one
-                    allActive = false;
+                    allInActive = false;
                 }
 
                 this.sandbox.dom.append($tdValue, $span);
             }
 
-            return allActive;
+            return allInActive;
         }
     };
 });

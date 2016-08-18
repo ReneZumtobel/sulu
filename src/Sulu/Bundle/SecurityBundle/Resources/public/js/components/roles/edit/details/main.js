@@ -48,8 +48,18 @@ define([
         },
 
         bindDOMEvents: function() {
-            this.sandbox.dom.on('#select-all', 'click', function() {
-                this.sandbox.emit('husky.matrix.set-all');
+            this.sandbox.dom.on('#change-all', 'click', function() {
+                if(!!$('#change-all').hasClass('set-all')) {
+                    this.sandbox.emit('husky.matrix.set-all');
+                    $('#change-all').html(this.sandbox.translate('security.roles.none'));
+                    $('#change-all').removeClass('set-all');
+                    $('#change-all').addClass('set-none');
+                } else if(!!$('#change-all').hasClass('set-none')) {
+                    this.sandbox.emit('husky.matrix.unset-all');
+                    $('#change-all').html(this.sandbox.translate('security.roles.all'));
+                    $('#change-all').removeClass('set-none');
+                    $('#change-all').addClass('set-all');
+                }
             }.bind(this));
         },
 
@@ -171,6 +181,18 @@ define([
             if (!data.activated) {
                 // unset god status as soon as one permission is removed
                 this.sandbox.dom.attr('#god', {checked: false});
+            }
+
+            var oneActivated = $('#matrix').find('.is-active');
+
+            if(!!oneActivated.length ){
+                $('#change-all').html(this.sandbox.translate('security.roles.none'));
+                $('#change-all').removeClass('set-all');
+                $('#change-all').addClass('set-none');
+            } else if(!oneActivated.length) {
+                $('#change-all').html(this.sandbox.translate('security.roles.all'));
+                $('#change-all').removeClass('set-none');
+                $('#change-all').addClass('set-all');
             }
         },
 
